@@ -1,21 +1,11 @@
+import { JestProcessManagerOptions } from 'jest-process-manager';
+import { Test } from 'jest-runner';
 import {
-  Browser,
-  BrowserContext,
-  Page,
-  BrowserContextOptions,
-  LaunchOptions,
-  ConnectOptions,
-  ConnectOverCDPOptions,
-  BrowserType as PlaywrightBrowserType,
-  ViewportSize,
-  ChromiumBrowser,
-  FirefoxBrowser,
-  WebKitBrowser,
-  devices,
-} from 'playwright-core'
-import { Config as JestConfig } from '@jest/types'
-import { Test } from 'jest-runner'
-import { JestProcessManagerOptions } from 'jest-process-manager'
+	devices, Browser, BrowserContext, BrowserContextOptions, BrowserType as PlaywrightBrowserType,
+	ChromiumBrowser, ConnectOptions, ConnectOverCDPOptions, FirefoxBrowser, LaunchOptions, Page,
+	ViewportSize, WebKitBrowser
+} from 'playwright-core';
+import { Config as JestConfig } from '@jest/types';
 
 // TODO Find out flex ways to reuse constants
 declare const IMPORT_KIND_PLAYWRIGHT = 'playwright'
@@ -228,7 +218,10 @@ export interface JestPlaywrightConfig {
   collectCoverage?: boolean
 }
 
-export type JestPlaywrightProjectConfig = Test['context']['config'] & {
+export type JestPlaywrightProjectConfig = (
+  | Test['context']['config']
+  | JestConfig
+) & {
   browserName: BrowserType
   wsEndpoint: WsEndpointType
   device: DeviceType

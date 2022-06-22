@@ -7,7 +7,18 @@ import type {
   ConnectOverCDPOptions,
   Page,
 } from 'playwright-core'
-import { Event } from 'jest-circus'
+import { Event } from 'jest-circus';
+import NodeEnvironment from 'jest-environment-node';
+import {
+	CHROMIUM, CONFIG_ENVIRONMENT_NAME, DEFAULT_CONFIG, FIREFOX, IMPORT_KIND_PLAYWRIGHT, LAUNCH,
+	PERSISTENT
+} from './constants';
+import { saveCoverageOnPage, saveCoverageToFile } from './coverage';
+import {
+	checkDevice, deepMerge, formatError, getBrowserOptions, getBrowserType, getDeviceBrowserType,
+	getPlaywrightInstance
+} from './utils';
+
 import type {
   BrowserType,
   ConfigDeviceType,
@@ -19,26 +30,6 @@ import type {
   Playwright,
   TestPlaywrightConfigOptions,
 } from '../types/global'
-import {
-  CHROMIUM,
-  CONFIG_ENVIRONMENT_NAME,
-  DEFAULT_CONFIG,
-  FIREFOX,
-  IMPORT_KIND_PLAYWRIGHT,
-  PERSISTENT,
-  LAUNCH,
-} from './constants'
-import {
-  checkDevice,
-  deepMerge,
-  formatError,
-  getBrowserOptions,
-  getBrowserType,
-  getDeviceBrowserType,
-  getPlaywrightInstance,
-} from './utils'
-import { saveCoverageOnPage, saveCoverageToFile } from './coverage'
-
 const handleError = (error: Error): void => {
   process.emit('uncaughtException', error)
 }
@@ -106,17 +97,26 @@ const getDeviceName = (
 }
 
 export const getPlaywrightEnv = (basicEnv = 'node'): unknown => {
-  const RootEnv = require(basicEnv === 'node'
+  let RootEnv = require(basicEnv === 'node'
     ? 'jest-environment-node'
     : 'jest-environment-jsdom')
+
+  if (RootEnv.default != null) {
+    RootEnv = RootEnv.default
+  }
 
   return class PlaywrightEnvironment extends RootEnv {
     readonly _config: JestPlaywrightProjectConfig
     _jestPlaywrightConfig!: JestPlaywrightConfig
 
     constructor(config: JestPlaywrightProjectConfig) {
-      super(config)
-      this._config = config
+      if (config.projectConfig != null) {
+        super(config)
+        this._config = config.projectConfig
+      } else {
+        super(config)
+        this._config = config
+      }
     }
 
     _getContextOptions(devices: Playwright['devices']): BrowserContextOptions {

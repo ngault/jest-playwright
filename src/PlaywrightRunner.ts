@@ -1,4 +1,14 @@
-import JestRunner from 'jest-runner'
+import JestRunner from 'jest-runner';
+import { GenericBrowser } from '../types/global';
+import {
+	CONFIG_ENVIRONMENT_NAME, DEBUG_TIMEOUT, DEFAULT_TEST_PLAYWRIGHT_TIMEOUT, LAUNCH, SERVER
+} from './constants';
+import { mergeCoverage, setupCoverage } from './coverage';
+import {
+	checkBrowserEnv, checkDevice, deepMerge, generateKey, getBrowserOptions, getBrowserType,
+	getDeviceBrowserType, getDisplayName, getPlaywrightInstance, readConfig
+} from './utils';
+
 import type { BrowserServer } from 'playwright-core'
 import type {
   Test,
@@ -20,28 +30,6 @@ import type {
   ConfigDeviceType,
   Playwright,
 } from '../types/global'
-import {
-  checkBrowserEnv,
-  checkDevice,
-  getDisplayName,
-  readConfig,
-  getPlaywrightInstance,
-  getBrowserOptions,
-  getBrowserType,
-  getDeviceBrowserType,
-  deepMerge,
-  generateKey,
-} from './utils'
-import {
-  DEBUG_TIMEOUT,
-  DEFAULT_TEST_PLAYWRIGHT_TIMEOUT,
-  CONFIG_ENVIRONMENT_NAME,
-  SERVER,
-  LAUNCH,
-} from './constants'
-import { setupCoverage, mergeCoverage } from './coverage'
-import { GenericBrowser } from '../types/global'
-
 const getBrowserTest = ({
   test,
   config,
@@ -195,13 +183,14 @@ class PlaywrightRunner extends JestRunner {
     return pwTests
   }
 
+  // @ts-ignore
   async runTests(
     tests: Test[],
     watcher: TestWatcher,
-    onStart: OnTestStart,
-    onResult: OnTestSuccess,
-    onFailure: OnTestFailure,
-    options: TestRunnerOptions,
+    onStart: OnTestStart | TestRunnerOptions | undefined,
+    onResult?: OnTestSuccess,
+    onFailure?: OnTestFailure,
+    options?: TestRunnerOptions,
   ): Promise<void> {
     const { rootDir, testEnvironmentOptions } = tests[0].context.config
     const config = await readConfig(
@@ -217,9 +206,17 @@ class PlaywrightRunner extends JestRunner {
     if (config.collectCoverage) {
       await setupCoverage()
     }
-    await this[
-      options.serial ? '_createInBandTestRun' : '_createParallelTestRun'
-    ](browserTests, watcher, onStart, onResult, onFailure)
+
+    await super.runTests(
+      browserTests,
+      watcher,
+      // @ts-ignore - using new shape
+      onStart,
+      // @ts-ignore - using new shape
+      onResult,
+      onFailure,
+      options,
+    )
 
     for (const key in this.browser2Server) {
       await this.browser2Server[key]!.close()
